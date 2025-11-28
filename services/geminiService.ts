@@ -1,8 +1,11 @@
 import { GoogleGenAI, Modality } from "@google/genai";
 import { QuizAnswers } from "../types";
 
-// Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Helper para inicializar o cliente apenas quando necessário
+// Isso previne erros de 'process is not defined' na inicialização da página em alguns ambientes
+const getAiClient = () => {
+  return new GoogleGenAI({ apiKey: process.env.API_KEY });
+};
 
 // Helper para retentar operações em caso de erro 500 (transiente)
 async function retryOperation<T>(operation: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
@@ -24,6 +27,7 @@ async function retryOperation<T>(operation: () => Promise<T>, retries = 3, delay
 export const generatePersonalizedPlan = async (answers: QuizAnswers): Promise<string> => {
   try {
     return await retryOperation(async () => {
+      const ai = getAiClient();
       const prompt = `
         Atue como uma consultora de amamentação especialista, humana, muito empática e carinhosa.
         Uma mãe acabou de fazer uma autoavaliação com os seguintes dados:
@@ -59,6 +63,7 @@ export const generatePersonalizedPlan = async (answers: QuizAnswers): Promise<st
 export const generateSOSAudio = async (): Promise<ArrayBuffer | null> => {
   try {
     return await retryOperation(async () => {
+      const ai = getAiClient();
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash-preview-tts",
         contents: [{ parts: [{ text: 'Oi querida. Respire fundo. Você está indo muito bem. A dor vai passar. Solte os ombros, relaxe o maxilar. Você e seu bebê estão aprendendo juntos. Não se culpe. Estamos aqui com você.' }] }],

@@ -4,6 +4,50 @@ import { ViewState, QuizAnswers, Lesson, GuideStep } from "./types";
 import { SOS_TIPS, HEALING_TIPS, VISUAL_GUIDE_STEPS, LESSONS } from "./constants";
 import { generatePersonalizedPlan, generateSOSAudio } from "./services/geminiService";
 
+// --- Error Boundary ---
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: any;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  state: ErrorBoundaryState = { hasError: false, error: null };
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("Uncaught error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-6 text-center min-h-screen flex flex-col items-center justify-center bg-red-50 text-red-800">
+          <h1 className="text-2xl font-bold mb-4">Ops! Algo deu errado.</h1>
+          <p className="mb-4">Por favor, recarregue a página.</p>
+          <pre className="text-xs bg-white p-4 rounded border border-red-200 text-left overflow-auto max-w-full">
+            {this.state.error?.toString()}
+          </pre>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-6 bg-red-500 text-white px-6 py-3 rounded-xl font-bold"
+          >
+            Recarregar Aplicativo
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 // --- Components ---
 
 const Icons = {
@@ -502,5 +546,14 @@ const App = () => {
   );
 };
 
-const root = createRoot(document.getElementById("root")!);
-root.render(<App />);
+const rootElement = document.getElementById("root");
+if (!rootElement) throw new Error("Root element not found");
+
+const root = createRoot(rootElement);
+root.render(
+  <React.StrictMode>
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  </React.StrictMode>
+);
